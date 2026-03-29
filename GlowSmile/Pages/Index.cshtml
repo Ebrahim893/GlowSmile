@@ -1,0 +1,90 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "GlowSmile - Dental Care";
+}
+
+<main id="home">
+    <div class="home">
+        <h1>Your Smile Starts Here</h1>
+        <p>Professional Dental Care With The Latest Technology</p>
+        <a asp-page="/Booking">Book Now</a>
+    </div>
+</main>
+
+<section class="About-Us" id="about-us">
+    <h2>About Us</h2>
+    <div class="information">
+        <div class="p">
+            <p>
+                Welcome to our Dental Care Center. We are dedicated to providing high-quality dental services in a
+                comfortable and friendly environment. Our team of experienced dentists and specialists works hard to
+                ensure that every patient receives the best care using modern equipment and advanced techniques.
+                Our goal is to help our patients achieve healthy and beautiful smiles through professional
+                treatment, preventive care, and personalized attention.
+            </p>
+        </div>
+        <div class="image">
+            <img src="~/imgs/drr.jpeg" alt="Dentist">
+        </div>
+    </div>
+</section>
+
+<section class="Services" id="services">
+    <div class="h2">
+        <h2>Our Services</h2>
+    </div>
+    <div class="content">
+        @if (Model.Services != null && Model.Services.Any())
+        {
+            @foreach (var item in Model.Services)
+            {
+                <div>
+                    <img src="/imgs/@item.ImagePath" alt="@item.Name">
+                    <h3>@item.Name</h3>
+                    <p>@item.Description</p>
+                </div>
+            }
+        }
+        else
+        {
+            @* رسالة تظهر في حالة لو الداتابيز لسه فاضية *@
+            <div style="grid-column: 1 / -1; text-align: center; padding: 20px;">
+                <p>Stay tuned! Our professional services will be listed here soon.</p>
+            </div>
+        }
+    </div>
+</section>
+<section class="doctors" id="doctors">
+    <div class="h2">
+        <h2>Our Doctors</h2>
+    </div>
+    <div class="doctors-content">
+        @if (Model.Doctors != null && Model.Doctors.Any())
+        {
+            @foreach (var doc in Model.Doctors)
+            {
+                <div>
+                    @* عرض صورة الدكتور *@
+                    <img src="/imgs/@doc.ImagePath" alt="@doc.FullName" style="width:150px; height:150px; object-fit:cover; border-radius:50%;">
+
+                    <h3>@doc.FullName</h3>
+
+                    @* عرض اسم الخدمة (التخصص) المرتبط بالدكتور *@
+                    <h5>@(doc.Service != null ? doc.Service.Name : "General Dentist")</h5>
+
+                    <p>@doc.Bio</p>
+
+                    @* اختياري: عرض الشفت لو حابب *@
+                    <small style="color: #00b4d8;">Shift: @doc.Shift</small>
+                </div>
+            }
+        }
+        else
+        {
+            <div style="grid-column: 1 / -1; text-align: center; padding: 20px;">
+                <p>Our expert doctors will be listed here soon.</p>
+            </div>
+        }
+    </div>
+</section>

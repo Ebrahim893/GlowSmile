@@ -1,0 +1,106 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - GlowSmile</title>
+
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    @* <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" /> *@
+</head>
+<body>
+
+    <header>
+        <div class="logo">
+            <img src="~/imgs/logoo.png" alt="logo">
+            <h2>GlowSmile</h2>
+        </div>
+
+        <div class="menu-toggle" id="mobile-menu">
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+        </div>
+
+        <nav>
+            <ul class="nav-list">
+                <li><a href="/Index#home">Home</a></li>
+                <li><a href="/Index#about-us">About Us</a></li>
+                <li><a href="/Index#services">Services</a></li>
+                <li><a href="/Index#doctors">Doctors</a></li>
+                <li><a asp-page="/Booking" style="color: #00b4d8; font-weight: bold;">Book Now</a></li>
+            </ul>
+
+        </nav>
+    </header>
+
+    <main role="main">
+        @RenderBody()
+    </main>
+
+    <footer class="main-footer">
+        <div class="footer-container">
+            <div class="footer-col">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="/Index#home">Home</a></li>
+                    <li><a href="/Index#about-us">About Us</a></li>
+                    <li><a href="/Index#services">Services</a></li>
+                    <li><a href="/Index#doctors">Doctors</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Patient Resources</h4>
+                <ul>
+                    <li><a href="#">FAQs</a></li>
+                    <li><a asp-page="/Booking">Appointment</a></li>
+                    <li><a href="#">Insurance</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Support</h4>
+                <ul>
+                    <li><a asp-page="/Privacy">Privacy Policy</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Follow Us</h4>
+                <div class="social-icons">
+                    <a href="#" class="icon"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="icon"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="icon"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="icon"><i class="fab fa-linkedin-in"></i></a>
+                </div>
+                <p class="copyright">© 2026 GlowSmile Clinic. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <script>
+        const menu = document.querySelector('#mobile-menu');
+        const menuLinks = document.querySelector('.nav-list');
+
+        menu.addEventListener('click', function() {
+            menuLinks.classList.toggle('active');
+            menu.classList.toggle('is-active');
+        });
+
+        document.querySelectorAll('.nav-list a').forEach(link => {
+            link.addEventListener('click', () => {
+                menuLinks.classList.remove('active');
+                menu.classList.remove('is-active');
+            });
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

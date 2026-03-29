@@ -1,0 +1,246 @@
+﻿@page
+@model GlowSmile.Pages.Admin.IndexModel
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@{
+    ViewData["Title"] = "GlowSmile Admin";
+}
+
+<style>
+    .admin-container { padding: 40px 5%; background: #f4f7f6; min-height: 100vh; font-family: 'Segoe UI', sans-serif; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+    .stat-card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); text-align: center; border-bottom: 4px solid #00b4d8; }
+    .filter-section { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; }
+    .filter-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 200px; }
+    .table-container { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); overflow-x: auto; margin-bottom: 40px; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; padding: 15px; border-bottom: 2px solid #eee; color: #0056b3; }
+    td { padding: 15px; border-bottom: 1px solid #eee; }
+    .btn-action { padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.8rem; font-weight: bold; color: white; transition: 0.3s; }
+    .btn-confirm { background: #28a745; } .btn-delete { background: #dc3545; }
+    .status-badge { padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+    .status-confirmed { background: #d4edda; color: #155724; } .status-pending { background: #fff3cd; color: #856404; }
+    .custom-modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); }
+    .modal-content { background: white; margin: 5% auto; padding: 30px; border-radius: 15px; width: 450px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
+    .modal-input { width: 100%; padding: 12px; margin-top: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-family: inherit; }
+    .management-section { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px; }
+</style>
+
+<div class="admin-container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <h2><i class="fas fa-tooth" style="color:#00b4d8"></i> GlowSmile Admin</h2>
+        <form method="post" asp-page-handler="Logout">
+            <button type="submit" class="btn-action" style="background:#6c757d;">Logout</button>
+        </form>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card"><h3>Total Bookings</h3><p>@Model.TotalAppointments</p></div>
+        <div class="stat-card"><h3>Active Doctors</h3><p>@Model.TotalDoctors</p></div>
+        <div class="stat-card" style="border-color: #28a745;"><h3>Today's Confirmed</h3><p>@Model.Appointments.Count(a => a.IsConfirmed && a.AppointmentDate.Date == DateTime.Today)</p></div>
+    </div>
+
+    <div style="margin-bottom: 20px; display: flex; gap: 10px;">
+        <button onclick="document.getElementById('doctorModal').style.display='block'" class="btn-action" style="background: #0077b6; padding: 12px 20px;">
+            <i class="fas fa-user-plus"></i> Add New Doctor
+        </button>
+        <button onclick="document.getElementById('serviceModal').style.display='block'" class="btn-action" style="background: #00b4d8; padding: 12px 20px;">
+            <i class="fas fa-concierge-bell"></i> Add New Service
+        </button>
+    </div>
+
+    <div class="filter-section">
+        <div class="filter-group"><label>Search Phone</label><input type="text" id="phoneSearch" onkeyup="applyAllFilters()" placeholder="01xxx..."></div>
+        <div class="filter-group">
+            <label>By Doctor</label>
+            <select id="doctorFilter" onchange="applyAllFilters()">
+                <option value="">All Doctors</option>
+                @foreach (var doc in Model.DoctorsList) { <option value="@doc.FullName">@doc.FullName</option> }
+            </select>
+        </div>
+        <div class="filter-group"><label>By Date</label><input type="date" id="dateFilter" onchange="applyAllFilters()"></div>
+        <button onclick="clearAllFilters()" class="btn-action" style="background: #6c757d; height: 40px;">Reset</button>
+        <button onclick="exportToExcel()" class="btn-action" style="background: #217346; height: 40px;"><i class="fas fa-file-excel"></i> Export</button>
+    </div>
+
+    <div class="table-container">
+        <table id="appointmentsTable">
+            <thead>
+                <tr>
+                    <th>Patient</th>
+                    <th>WhatsApp</th>
+                    <th>Date & Shift</th>
+                    <th>Doctor</th>
+                    <th>Status / Time</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Appointments) {
+                    <tr class="main-row">
+                        <td><strong>@item.PatientName</strong></td>
+                        <td class="phone-cell">@item.PatientPhone</td>
+                        <td class="date-cell" data-full-date="@item.AppointmentDate.ToString("yyyy-MM-dd")">
+                            @item.AppointmentDate.ToString("dd MMM yyyy")<br/><small style="color:#00b4d8">@item.ShiftTime</small>
+                        </td>
+                        <td class="doctor-cell">@item.Doctor?.FullName</td>
+                        <td>
+                            @if (item.IsConfirmed) {
+                                <span class="status-badge status-confirmed">Confirmed</span> <span class="assigned-time-text">🕒 @item.AssignedTime</span>
+                            } else { <span class="status-badge status-pending">Pending</span> }
+                        </td>
+                        <td>
+                            <div style="display:flex; gap:5px; align-items:center;">
+                                <a href="https://wa.me/@item.PatientPhone" target="_blank" style="color:#25D366; font-size:1.2rem;"><i class="fab fa-whatsapp"></i></a>
+                                @if (!item.IsConfirmed) {
+                                    <form method="post" asp-page-handler="Confirm" asp-route-id="@item.ID" style="display:flex; gap:5px;">
+                                        <select name="assignedTime" class="modal-input" style="width:100px; margin:0; padding:5px;" required 
+                                                onfocus="loadSlots(this, @item.DoctorID, '@item.AppointmentDate.ToString("yyyy-MM-dd")')">
+                                            <option value="">Time</option>
+                                        </select>
+                                        <button type="submit" class="btn-action btn-confirm">OK</button>
+                                    </form>
+                                }
+                                <form method="post" asp-page-handler="Delete" asp-route-id="@item.ID" onsubmit="return confirm('Delete booking?')">
+                                    <button type="submit" class="btn-action btn-delete"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="management-section">
+        <div class="table-container">
+            <h4><i class="fas fa-user-md"></i> Manage Doctors</h4>
+            <table>
+                @foreach(var d in Model.DoctorsList) {
+                    <tr>
+                        <td>
+                             <img src="/imgs/@d.ImagePath" style="width:30px; height:30px; border-radius:50%; object-fit:cover; margin-right:5px;" />
+                             @d.FullName <br/><small>@d.Shift</small>
+                        </td>
+                        <td style="text-align:right">
+                            <form method="post" asp-page-handler="DeleteDoctor" asp-route-id="@d.ID" onsubmit="return confirm('Delete doctor?')">
+                                <button type="submit" class="btn-action btn-delete">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </table>
+        </div>
+        <div class="table-container">
+            <h4><i class="fas fa-concierge-bell"></i> Manage Services</h4>
+            <table>
+                @foreach(var s in Model.ServicesList) {
+                    <tr>
+                        <td>
+                             <img src="/imgs/@s.ImagePath" style="width:30px; height:30px; border-radius:50%; object-fit:cover; margin-right:5px;" />
+                             @s.Name <br/><small>@s.Price EGP</small>
+                        </td>
+                        <td style="text-align:right">
+                            <form method="post" asp-page-handler="DeleteService" asp-route-id="@s.ID" onsubmit="return confirm('Delete service?')">
+                                <button type="submit" class="btn-action btn-delete">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="doctorModal" class="custom-modal">
+    <div class="modal-content">
+        <h3>Add New Doctor</h3>
+        <form method="post" asp-page-handler="AddDoctor" enctype="multipart/form-data">
+            <input type="text" name="FullName" placeholder="Full Name" required class="modal-input">
+            <textarea name="Bio" placeholder="Doctor Bio" class="modal-input"></textarea>
+            
+            <label style="margin-top:10px; display:block; font-size:0.8rem;">Doctor Photo:</label>
+            <input type="file" name="ImageFile" accept="image/*" class="modal-input">
+
+            <select name="Shift" class="modal-input" required>
+                <option value="Morning">Morning Shift</option>
+                <option value="Afternoon">Afternoon Shift</option>
+                <option value="Evening">Evening Shift</option>
+            </select>
+            <select name="ServiceID" class="modal-input" required>
+                <option value="">Link to Service</option>
+                @foreach(var s in Model.ServicesList) { <option value="@s.ID">@s.Name</option> }
+            </select>
+            <input type="number" name="MaxPatients" placeholder="Max Patients" required class="modal-input">
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button type="submit" class="btn-action btn-confirm" style="flex:1">Save</button>
+                <button type="button" onclick="document.getElementById('doctorModal').style.display='none'" class="btn-action btn-delete" style="flex:1">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="serviceModal" class="custom-modal">
+    <div class="modal-content">
+        <h3>Add New Service</h3>
+        <form method="post" asp-page-handler="AddService" enctype="multipart/form-data">
+            <input type="text" name="Name" placeholder="Service Name" required class="modal-input">
+            <textarea name="Description" placeholder="Description" class="modal-input"></textarea>
+            
+            <label style="margin-top:10px; display:block; font-size:0.8rem;">Service Image:</label>
+            <input type="file" name="ImageFile" accept="image/*" class="modal-input">
+
+            <input type="number" name="Price" placeholder="Price" required class="modal-input">
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button type="submit" class="btn-action btn-confirm" style="flex:1">Save</button>
+                <button type="button" onclick="document.getElementById('serviceModal').style.display='none'" class="btn-action btn-delete" style="flex:1">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+    async function loadSlots(select, docId, date) {
+        if (select.options.length > 1) return;
+        const res = await fetch(`?handler=AvailableSlots&doctorId=${docId}&date=${date}`);
+        const slots = await res.json();
+        select.innerHTML = '<option value="">Time</option>';
+        slots.forEach(s => { let opt = new Option(s, s); select.add(opt); });
+    }
+
+    function applyAllFilters() {
+        let phone = document.getElementById("phoneSearch").value.toLowerCase();
+        let doc = document.getElementById("doctorFilter").value.toLowerCase();
+        let date = document.getElementById("dateFilter").value;
+        document.querySelectorAll("#appointmentsTable tbody tr.main-row").forEach(row => {
+            let rowPhone = row.querySelector(".phone-cell").innerText.toLowerCase();
+            let rowDoc = row.querySelector(".doctor-cell").innerText.toLowerCase();
+            let rowDate = row.querySelector(".date-cell").getAttribute("data-full-date");
+            row.style.display = (rowPhone.includes(phone) && (doc === "" || rowDoc === doc) && (date === "" || rowDate === date)) ? "" : "none";
+        });
+    }
+
+    function clearAllFilters() {
+        document.getElementById("phoneSearch").value = "";
+        document.getElementById("doctorFilter").value = "";
+        document.getElementById("dateFilter").value = "";
+        applyAllFilters();
+    }
+
+    function exportToExcel() {
+        let data = [["Patient", "Phone", "Date", "Doctor", "Status"]];
+        document.querySelectorAll("#appointmentsTable tbody tr.main-row").forEach(row => {
+            if (row.style.display !== "none") {
+                data.push([
+                    row.cells[0].innerText, row.cells[1].innerText, 
+                    row.cells[2].innerText.replace('\n', ' '), row.cells[3].innerText, 
+                    row.cells[4].innerText
+                ]);
+            }
+        });
+        let wb = XLSX.utils.book_new();
+        let ws = XLSX.utils.aoa_to_sheet(data);
+        XLSX.utils.book_append_sheet(wb, ws, "Report");
+        XLSX.writeFile(wb, "GlowSmile_Report.xlsx");
+    }
+</script>

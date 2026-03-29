@@ -1,0 +1,139 @@
+﻿@page
+@model GlowSmile.Pages.BookingModel
+@{
+    ViewData["Title"] = "Book Your Appointment";
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css" />
+<style>
+    .iti {
+        width: 100%;
+        margin-bottom: 15px;
+    }
+
+    .iti__flag-container {
+        z-index: 5;
+    }
+    /* تنسيق إضافي للـ select ليناسب تصميمك */
+    select.form-control-custom {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        margin-bottom: 15px;
+        background-color: white;
+    }
+</style>
+
+<div class="booking-section">
+    <div class="booking-container">
+        <div class="booking-side-info">
+            <h2>Visit Us</h2>
+            <p>Our specialists are ready to provide you with the best dental care experience.</p>
+            <div class="info-box">
+                <div class="info-item"><i class="fas fa-map-marker-alt"></i><p>Alexandria, Egypt</p></div>
+                <div class="info-item"><i class="fas fa-phone"></i><p>+20 123 4567 890</p></div>
+                <div class="info-item"><i class="fas fa-envelope"></i><p>glowsmile@clinic.com</p></div>
+            </div>
+        </div>
+
+        <div class="booking-main-form">
+            <h3>Make an Appointment</h3>
+
+            @if (!string.IsNullOrEmpty(Model.StatusMessage))
+            {
+                <div class="alert @(Model.StatusMessage.StartsWith("Error") ? "text-danger" : "text-success")" style="margin-bottom:20px; font-weight:bold;">
+                    @Model.StatusMessage
+                </div>
+            }
+
+            <form method="post" id="bookingForm">
+                <div class="form-row">
+                    <input type="text" asp-for="NewAppointment.PatientName" placeholder="Full Name" required>
+                    <input type="email" asp-for="NewAppointment.PatientEmail" placeholder="Email Address" required>
+                </div>
+
+                <div class="form-row">
+                    <input type="tel" asp-for="NewAppointment.PatientPhone" id="phone" required>
+
+                    @* تم التعديل هنا: استخدام Select بدلاً من Input Date *@
+                    <select asp-for="NewAppointment.AppointmentDate" asp-items="Model.NextSevenDays" required class="form-control-custom">
+                        <option value="" disabled selected>-- Select Appointment Date --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>1. Select Specialty</label>
+                    <select id="serviceSelect" asp-items="Model.ServiceList" required class="form-control-custom">
+                        <option value="" disabled selected>-- Choose Service --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>2. Select Doctor</label>
+                    <select asp-for="NewAppointment.DoctorID" id="doctorSelect" required disabled class="form-control-custom">
+                        <option value="">-- Select Specialty First --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>3. Doctor's Shift (Fixed)</label>
+                    <input type="text" asp-for="NewAppointment.ShiftTime" id="shiftDisplay" readonly
+                           style="background: #f9f9f9; cursor: not-allowed; border: 1px solid #ccc; padding: 12px; border-radius: 5px; width: 100%;"
+                           placeholder="Doctor's shift will appear here">
+                </div>
+
+                <div class="form-group">
+                    <textarea asp-for="NewAppointment.Message" placeholder="Tell us about your case (Optional)..." rows="3" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;"></textarea>
+                </div>
+
+                <button type="submit" class="btn-confirm">Confirm Appointment</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
+    <script>
+        const phoneInputField = document.querySelector("#phone");
+        const phoneInput = window.intlTelInput(phoneInputField, {
+            initialCountry: "eg",
+            preferredCountries: ["eg", "sa", "ae", "kw"],
+            separateDialCode: true,
+            utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js",
+        });
+
+        const form = document.querySelector("#bookingForm");
+        form.addEventListener("submit", function (e) {
+            const fullNumber = phoneInput.getNumber();
+            phoneInputField.value = fullNumber;
+        });
+
+        document.getElementById('serviceSelect').addEventListener('change', async function() {
+            const serviceId = this.value;
+            const doctorSelect = document.getElementById('doctorSelect');
+            doctorSelect.innerHTML = '<option value="">Loading...</option>';
+            doctorSelect.disabled = true;
+
+            const response = await fetch(`?handler=DoctorsByService&serviceId=${serviceId}`);
+            const doctors = await response.json();
+
+            doctorSelect.innerHTML = '<option value="" disabled selected>-- Choose Doctor --</option>';
+            doctors.forEach(doc => {
+                const opt = document.createElement('option');
+                opt.value = doc.id;
+                opt.text = doc.name;
+                opt.dataset.shift = doc.shift;
+                doctorSelect.add(opt);
+            });
+            doctorSelect.disabled = false;
+        });
+
+        document.getElementById('doctorSelect').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            document.getElementById('shiftDisplay').value = selectedOption.dataset.shift;
+        });
+    </script>
+}
