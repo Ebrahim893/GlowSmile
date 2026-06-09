@@ -14,7 +14,6 @@
     .iti__flag-container {
         z-index: 5;
     }
-    /* تنسيق إضافي للـ select ليناسب تصميمك */
     select.form-control-custom {
         width: 100%;
         padding: 12px;
@@ -56,7 +55,6 @@
                 <div class="form-row">
                     <input type="tel" asp-for="NewAppointment.PatientPhone" id="phone" required>
 
-                    @* تم التعديل هنا: استخدام Select بدلاً من Input Date *@
                     <select asp-for="NewAppointment.AppointmentDate" asp-items="Model.NextSevenDays" required class="form-control-custom">
                         <option value="" disabled selected>-- Select Appointment Date --</option>
                     </select>
