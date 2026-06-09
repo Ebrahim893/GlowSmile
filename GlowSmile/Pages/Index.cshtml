@@ -65,17 +65,14 @@
             @foreach (var doc in Model.Doctors)
             {
                 <div>
-                    @* عرض صورة الدكتور *@
                     <img src="/imgs/@doc.ImagePath" alt="@doc.FullName" style="width:150px; height:150px; object-fit:cover; border-radius:50%;">
 
                     <h3>@doc.FullName</h3>
 
-                    @* عرض اسم الخدمة (التخصص) المرتبط بالدكتور *@
                     <h5>@(doc.Service != null ? doc.Service.Name : "General Dentist")</h5>
 
                     <p>@doc.Bio</p>
 
-                    @* اختياري: عرض الشفت لو حابب *@
                     <small style="color: #00b4d8;">Shift: @doc.Shift</small>
                 </div>
             }
