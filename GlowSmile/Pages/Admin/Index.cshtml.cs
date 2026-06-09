@@ -1,6 +1,6 @@
 ﻿using GlowSmile.Data;
 using GlowSmile.Models;
-using GlowSmile.Services; // تأكد من اسم الـ Namespace الخاص بـ EmailService
+using GlowSmile.Services; 
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -48,7 +48,6 @@ namespace GlowSmile.Pages.Admin
             TotalDoctors = DoctorsList.Count;
         }
 
-        // --- دالة معالجة الصور باستخدام ImageSharp ---
         private async Task<string> ProcessUploadedFile(IFormFile file, string defaultName)
         {
             if (file == null || file.Length == 0) return defaultName;
@@ -59,7 +58,6 @@ namespace GlowSmile.Pages.Admin
             string fileName = Guid.NewGuid().ToString() + ".jpg";
             string filePath = Path.Combine(folderPath, fileName);
 
-            // هنا حددنا المسار بالكامل لحل الـ Ambiguous Reference
             using (var image = await SixLabors.ImageSharp.Image.LoadAsync(file.OpenReadStream()))
             {
                 image.Mutate(x => x.Resize(new ResizeOptions
@@ -139,7 +137,6 @@ namespace GlowSmile.Pages.Admin
             return RedirectToPage("/Admin/Index");
         }
 
-        // --- تأكيد الحجز وإرسال إيميل للعميل ---
         public async Task<IActionResult> OnPostConfirmAsync(int id, string assignedTime)
         {
             var app = await _context.Appointments.Include(a => a.Doctor).FirstOrDefaultAsync(a => a.ID == id);
@@ -149,7 +146,6 @@ namespace GlowSmile.Pages.Admin
                 app.AssignedTime = assignedTime;
                 await _context.SaveChangesAsync();
 
-                // إرسال إيميل التأكيد
                 string subject = "تم تأكيد موعدك في GlowSmile";
                 string body = $@"<h2>مرحباً {app.PatientName}</h2>
                                 <p>يسعدنا إبلاغك بأنه تم تأكيد حجزك بنجاح.</p>
