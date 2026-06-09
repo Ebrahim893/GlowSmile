@@ -12,7 +12,6 @@ namespace GlowSmile.Pages.Admin
 
         public async Task<IActionResult> OnPostAsync(string username, string password)
         {
-            // تقدر تغير اليوزر والباسورد من هنا
             if (username == "admin" && password == "123")
             {
                 var claims = new List<Claim>
