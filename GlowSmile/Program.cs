@@ -5,27 +5,25 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. إضافة قاعدة البيانات
+// DB
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// 2. إضافة نظام الصلاحيات (Authentication)
+//  AUTH
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
-        options.LoginPath = "/Admin/Login"; // المسار لو حد مش مسجل دخول
+        options.LoginPath = "/Admin/Login"; // 
         options.AccessDeniedPath = "/Admin/AccessDenied";
-        options.ExpireTimeSpan = TimeSpan.FromHours(8); // الجلسة تستمر 8 ساعات
+        options.ExpireTimeSpan = TimeSpan.FromHours(8); // 
     });
 
-// 3. إضافة الخدمات (الترتيب هنا هو الحل)
-builder.Services.AddTransient<EmailService>(); // ضفناها قبل الـ Build
+// Services
+builder.Services.AddTransient<EmailService>(); 
 builder.Services.AddRazorPages();
 
-// --- هنا يتم غلق قائمة الخدمات وتحويلها إلى App جاهز للتشغيل ---
 var app = builder.Build();
 
-// 4. إعدادات الـ Middleware (بعد الـ Build)
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
@@ -37,7 +35,6 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// الترتيب هنا مهم جداً: الـ Authentication قبل الـ Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
