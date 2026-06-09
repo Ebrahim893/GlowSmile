@@ -15,7 +15,6 @@ namespace GlowSmile.Pages
 
         public async Task<IActionResult> OnGetAsync(int id)
         {
-            // بنجيب بيانات الحجز مع اسم الدكتور عشان نعرضهم للمستخدم
             Appointment = await _context.Appointments
                 .Include(a => a.Doctor)
                 .FirstOrDefaultAsync(m => m.ID == id);
