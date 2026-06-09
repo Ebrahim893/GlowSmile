@@ -24,7 +24,6 @@ namespace GlowSmile.Pages
 
         public SelectList ServiceList { get; set; }
 
-        // القائمة الجديدة للـ 7 أيام
         public List<SelectListItem> NextSevenDays { get; set; }
         public string StatusMessage { get; set; }
 
@@ -33,12 +32,10 @@ namespace GlowSmile.Pages
             var services = await _context.Services.ToListAsync();
             ServiceList = new SelectList(services, "ID", "Name");
 
-            // --- منطق الـ 7 أيام القادمة ---
             NextSevenDays = new List<SelectListItem>();
             for (int i = 0; i < 7; i++)
             {
                 var date = DateTime.Now.AddDays(i);
-                // "dddd" لعرض اسم اليوم (مثل Monday)
                 string dateText = date.ToString("dddd (dd/MM/yyyy)");
                 string dateValue = date.ToString("yyyy-MM-dd");
 
@@ -80,7 +77,6 @@ namespace GlowSmile.Pages
             _context.Appointments.Add(NewAppointment);
             await _context.SaveChangesAsync();
 
-            // --- إرسال إيميل للعميل ---
             string subject = "استلام طلب حجزك - GlowSmile";
             string body = $@"<h2>مرحباً {NewAppointment.PatientName}</h2>
                             <p>نشكرك على اختيار GlowSmile. لقد استلمنا طلب حجزك وسنقوم بمراجعته وتأكيده معك في أقرب وقت.</p>
